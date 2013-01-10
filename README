@@ -1,29 +1,33 @@
+===========================
 Django Multiuploader Plugin
-----------------------------------------------------------------------
+===========================
 
-Readme for plugin of Django Multiuploader using jQuery Plugin by Sebastian Tschan(https://blueimp.net/).
+Multiple uploads for Django using jQuery File Upload (created by Sebastian Tschan https://blueimp.net/).
 
-This is a plugin, made using multiupload form from Sebastian Tschan.
-It uses jQuey UI and jQuery instead of Flash uploader.
-On Django side it uses sorl-thumbnails and PIL.
-You can use it in your applications with simple inclusion tag
+It uses jQuery UI and jQuery instead of Flash uploader.
 
-Requirements:
-----------------------------------------------------------------------
+On Django side it uses sorl-thumbnails and PIL to generate image previews, howver 
+other file types can also be uploaded.
+
+You can use it in your applications with simple inclusion tag.
+
+Requirements
+============
 
     - PIL(Python Imaging Library) (for sorl)
     - sorl-thumbnail's(http://thumbnail.sorl.net/) (for thumbnails generation)
-    - Django 1.2.5 +
+    - Django 1.5.0 +
 
-Tested:
-----------------------------------------------------------------------
+Tested
+======
+
 Currently Tested full functionality under Chrome, Firefox and Safari.
 Opera somehow fails to add multiple Photos.
 
 Will try to fix them as soon as possible.
 
-Example usage:
-----------------------------------------------------------------------
+Example Usage
+=============
 
 Adding this AJAX form to your web site is as simple, as adding this 2 tags to your template:
 
@@ -36,23 +40,25 @@ For those who can not figure out this manual.) Also feel free to comment it on m
 blog or send me a e-mail with your troubles/suggestions and usage experience...
 https://github.com/garmoncheg/django_multiuploader_example_usage/
 
+Installation
+=============
 
-Installation:
-----------------------------------------------------------------------
-1.Install an app. Do it by adding:
+1. Install:
 
-    'multiuploader', 
+	pip install git+git@github.com:alexhayes/django_multiuploader.git
 
-string to your settings.py -> INSTALLED_APPS = () dictionary.
-Note that is has to have 'sorl.thumbnail', working already.
+2. Add the following to your INSTALLED_APPS in settings.py:
 
-2.Register urls in your root urlconf urls.py adding string to your urlpatterns like so :
+	'sorl.thumbnail',
+    'multiuploader',
+
+3. Register urls in your root urlconf urls.py adding string to your urlpatterns like so :
 
     url(r'', include('multiuploader.urls')),
 
-3.Copy or symlink files from plugins "media/" directory to your MEDIA_ROOT.
+3. Copy or symlink files from plugins "media/" directory to your MEDIA_ROOT.
 
-4.Edit templates and styles to meet your needs. (Optional)
+4. Edit templates and styles to meet your needs. (Optional)
     (for e.g. changing the form design and/or behavior)
 
 5. Include the following js/css.
@@ -68,8 +74,8 @@ Note that is has to have 'sorl.thumbnail', working already.
 	<script src="{{ static_url }}multiuploader/scripts/jquery.fileupload-fp.js"></script>
 	<script src="{{ static_url }}multiuploader/scripts/jquery.fileupload-ui.js"></script>
 
-Settings:
-----------------------------------------------------------------------
+Settings
+========
 
 You can override plugin behavior by adding those settings to your root settings.py:
 
@@ -85,9 +91,8 @@ You can override plugin behavior by adding those settings to your root settings.
 
      MULTI_IMAGES_FOLDER = 'multiuploader_images'
 
-
-Model Usage:
-----------------------------------------------------------------------
+Model Usage
+===========
 
 Plugin stores Uploaded images to a simple model. It has some those fields:
 
@@ -111,13 +116,18 @@ And then in template:
 
 I will not stop on model usage here for long. Fell free to ask me any questions appeared...
 
-Development plans:
-----------------------------------------------------------------------
+Development Plans
+=================
+
  - Add a way to specify which model to use to store files.
  
- 
- 
- Changes:
-----------------------------------------------------------------------
+Changes
+=======
 
 See CHANGELOG file for additional changes upon versions.
+
+Authors
+=======
+
+- Iurii Garmash
+- Alex Hayes (packaging, multi-model support)

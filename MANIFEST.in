@@ -1,0 +1,3 @@
+setup.py
+include CHANGES README
+recursive-include multiuploader *.py *.html *.js
