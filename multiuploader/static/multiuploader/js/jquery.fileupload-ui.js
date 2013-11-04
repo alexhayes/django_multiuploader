@@ -479,7 +479,6 @@
         },
 
         _renderTemplate: function (func, files) {
-        	debugger;
             if (!func) {
                 return $();
             }
@@ -544,7 +543,6 @@
         },
 
         _renderUpload: function (files) {
-        	debugger;
             return this._renderTemplate(
                 this.options.uploadTemplate,
                 files

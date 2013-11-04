@@ -1,112 +1,198 @@
-from django.shortcuts import get_object_or_404, render_to_response
+import os
+import json
+from django.views.generic.detail import DetailView
+from django.utils.importlib import import_module
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.encoding import force_text
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseBadRequest
-from models import MultiuploaderImage
-from django.core.files.uploadedfile import UploadedFile
-
-#importing json parser to generate jQuery plugin friendly json response
-from django.utils import simplejson
-
-#for generating thumbnails
-#sorl-thumbnails must be installed and properly configured
-from sorl.thumbnail import get_thumbnail
-
-
+from django.core.exceptions import ImproperlyConfigured
+from django.http.response import HttpResponse, HttpResponseRedirect,\
+    HttpResponseBadRequest
+from django.views.generic.base import View
 from django.views.decorators.csrf import csrf_exempt
 
-import logging
-log = logging
+JSON_ENCODER = getattr(settings, 'JSON_ENCODER', False)
+if JSON_ENCODER:
+    parts = JSON_ENCODER.split('.')
+    module = import_module('.'.join(parts[:-1]))
+    JSON_ENCODER = getattr(module, parts[-1:][0])
+else:
+    JSON_ENCODER = DjangoJSONEncoder
 
-@csrf_exempt
-def multiuploader_delete(request, pk):
+class MultiuploaderMixin():
     """
-    View for deleting photos with multiuploader AJAX plugin.
-    made from api on:
-    https://github.com/blueimp/jQuery-File-Upload
+    A mixin that can be used to produce a list of files suitable for json consumption.
     """
-    if request.method == 'POST':
-        log.info('Called delete image. image id='+str(pk))
-        image = get_object_or_404(MultiuploaderImage, pk=pk)
-        image.delete()
-        log.info('DONE. Deleted photo id='+str(pk))
-        return HttpResponse(str(pk))
-    else:
-        log.info('Received not POST request to delete image view')
-        return HttpResponseBadRequest('Only POST accepted')
+    multiuploader_queryset = None
+    multiuploader_model = None
+    multiuploader_field_name = None
+    multiuploader_delete_type = 'POST'
 
-@csrf_exempt
-def multiuploader(request):
-    """
-    Main Multiuploader module.
-    Parses data from jQuery plugin and makes database changes.
-    """
-    if request.method == 'POST':
-        log.info('received POST to main multiuploader view')
-        if request.FILES == None:
-            return HttpResponseBadRequest('Must have files attached!')
-
-        #getting file data for farther manipulations
-        file = request.FILES[u'files[]']
-        wrapped_file = UploadedFile(file)
-        filename = wrapped_file.name
-        file_size = wrapped_file.file.size
-        log.info ('Got file: "%s"' % str(filename))
-        log.info('Content type: "$s" % file.content_type')
-
-        #writing file manually into model
-        #because we don't need form of any type.
-        image = MultiuploaderImage()
-        image.filename=str(filename)
-        image.image=file
-        image.key_data = image.key_generate
-        image.save()
-        log.info('File saving done')
-
-        #getting thumbnail url using sorl-thumbnail
-        if 'image' in file.content_type.lower():
-            im = get_thumbnail(image, "80x80", quality=50)
-            thumb_url = im.url
+    def get_multiuploader_model(self):
+        if self.multiuploader_model:
+            return self.multiuploader_model
         else:
-            thumb_url = ''
+            raise ImproperlyConfigured(
+                "%(cls)s is missing a Multiuploader Model. Define "
+                "%(cls)s.multiuploader_model or override "
+                "%(cls)s.get_multiuploader_model()." % {
+                    'cls': self.__class__.__name__
+                }
+            )
 
-        #settings imports
-        try:
-            file_delete_url = settings.MULTI_FILE_DELETE_URL+'/'
-            file_url = settings.MULTI_IMAGE_URL+'/'+image.key_data+'/'
-        except AttributeError:
-            file_delete_url = 'multi_delete/'
-            file_url = 'multi_image/'+image.key_data+'/'
-
+    def get_multiuploader_queryset(self):
         """
-        is actually: [{"name": "Screenshot from 2012-11-14 16:17:46.png", "url": "multi_image/95925526541943247735000327303075602114185579370918344597903504067450818566531/", "thumbnail_url": "/media/cache/f8/bd/f8bd83aadeba651ff9c040bb394ce117.jpg", "delete_type": "POST", "delete_url": "multi_delete/7/", "size": 38520}]
-        should be:   {"files":[{"url":"http://jquery-file-upload.appspot.com/AMIfv9734HSTDGd3tIybbnKVru--IjhjULKvNcIGUL2lvfqA93RNCAizDbvP-RQJNbh-N9m8UXsk-90jFFYSp8TlbZYhEcNN6Vb9HzQVQtdmF83H6sE_XkdnlI2V8lHX5V3Y4AamdX6VMbAt9sNWNx2BVGzhTfAYkRLYmRE1VzzWSe9C8c8Fu8g/Screenshot%20from%202012-11-14%2016%3A17%3A46.png","thumbnail_url":"http://lh5.ggpht.com/fcjVNT6qUGoMDtqqaNDNtU4mghy34qlzfj2GujikLgC7Nj5Bs4LUT_DWG_Q8OWujqvYHsKbeQ9pkvoAW4WiaubmqQxobIPyt=s80","name":"Screenshot from 2012-11-14 16:17:46.png","type":"image/png","size":38520,"delete_url":"http://jquery-file-upload.appspot.com/AMIfv9734HSTDGd3tIybbnKVru--IjhjULKvNcIGUL2lvfqA93RNCAizDbvP-RQJNbh-N9m8UXsk-90jFFYSp8TlbZYhEcNN6Vb9HzQVQtdmF83H6sE_XkdnlI2V8lHX5V3Y4AamdX6VMbAt9sNWNx2BVGzhTfAYkRLYmRE1VzzWSe9C8c8Fu8g/Screenshot%20from%202012-11-14%2016%3A17%3A46.png?delete=true","delete_type":"DELETE"}]}
-        """
+        Return the `QuerySet` that will be used to look up the object.
 
-        #generating json response array
-        result = {
-            'files': [ {"name":filename, 
-                       "size":file_size, 
-                       "url":file_url, 
-                       "thumbnail_url":thumb_url,
-                       "delete_url":file_delete_url+str(image.pk)+'/', 
-                       "delete_type":"POST",}
-                    ]
+        Note that this method is called by the default implementation of
+        `get_object` and may not be called if `get_object` is overriden.
+        """
+        if self.multiuploader_queryset is None:
+            if self.multiuploader_model:
+                return self.multiuploader_model._default_manager.all()
+            else:
+                raise ImproperlyConfigured(
+                    "%(cls)s is missing a Multiuploader QuerySet. Define "
+                    "%(cls)s.multiuploader_model, %(cls)s.multiuploader_queryset, or override "
+                    "%(cls)s.get_multiuploader_queryset()." % {
+                        'cls': self.__class__.__name__
+                    }
+                )
+        return self.multiuploader_queryset.all()
+
+    def get_multiuploader_field_name(self):
+        if self.multiuploader_field_name is None:
+            raise ImproperlyConfigured(
+                "%(cls)s is missing a Multiuploader field name. Define "
+                "%(cls)s.multiuploader_field_name or override "
+                "%(cls)s.get_multiuploader_field_name()." % {
+                    'cls': self.__class__.__name__
+                }
+            )
+        return self.multiuploader_field_name
+
+    def single_obj_context_data(self, obj, wrap=True):
+        field = getattr(obj, self.get_multiuploader_field_name())
+        return {
+            'name': os.path.basename(field.name),
+            'size': field.size,
+            'url': obj.get_download_url() if hasattr(obj, 'get_download_url') else None,
+            'delete_url': obj.get_delete_url() if hasattr(obj, 'get_delete_url') else None,
+            'delete_type': self.multiuploader_delete_type,
+            'thumbnail_url': obj.get_thumbnail_url() if hasattr(obj, 'get_thumbnail_url') else None
         }
-        response_data = simplejson.dumps(result)
-        
-        #checking for json data type
-        #big thanks to Guy Shapiro
-        if "application/json" in request.META['HTTP_ACCEPT_ENCODING']:
-            mimetype = 'application/json'
-        else:
-            mimetype = 'text/plain'
-        return HttpResponse(response_data, mimetype=mimetype)
-    else: #GET
-        return HttpResponse('Only POST accepted')
 
-def multi_show_uploaded(request, key):
-    """Simple file view helper.
-    Used to show uploaded file directly"""
-    image = get_object_or_404(MultiuploaderImage, key_data=key)
-    url = settings.MEDIA_URL+image.image.name
-    return render_to_response('multiuploader/one_image.html', {"multi_single_url":url,})
+    def list_context_data(self, **kwargs):
+        context = [self.single_obj_context_data(obj) 
+                   for obj in self.get_multiuploader_queryset()]
+        return context
+
+    def context_wrapper(self, context):
+        if isinstance(context, dict):
+            context = [context]
+        return {
+            'files': context
+        }
+
+    def render_to_response(self, context, **response_kwargs):
+        """
+        Returns a response, using the `response_class` for this
+        view, with a template rendered with the given context.
+
+        If any keyword arguments are provided, they will be
+        passed to the constructor of the response class.
+        """
+        return HttpResponse(json.dumps(self.context_wrapper(context), cls=JSON_ENCODER), 
+                            content_type='application/json',
+                            **response_kwargs)
+    
+class MultiuploaderListForObjectView(DetailView, MultiuploaderMixin):
+    """
+    Render a list of files for an object.
+
+    By default this is a model instance looked up from `self.queryset`, but the
+    view will support display of *any* object by overriding `self.get_object()`.
+    
+    `multiuploader_relationship_name` defines the relationship between `self.get_object()`
+    and any uploaded files. By default this is set to 'attachments'.
+    """
+    multiuploader_queryset_name = 'attachments'
+    
+    def get_context_data(self, **kwargs):
+        return self.list_context_data()
+    
+    def get_multiuploader_queryset_name(self):
+        return self.multiuploader_queryset_name
+    
+    def get_multiuploader_queryset(self):
+        obj = self.get_object()
+        multiuploader_queryset_name = self.get_multiuploader_queryset_name()
+        
+        if not hasattr(obj.objects, multiuploader_queryset_name):
+            raise ImproperlyConfigured(
+                "%(cls)s has not defined %(multiuploader_queryset_name)s. Perhaps "
+                    "%(cls)s.multiuploader_queryset_name is configured incorrectly?" % {
+                        'cls': self.__class__.__name__,
+                        'multiuploader_queryset_name': multiuploader_queryset_name
+                    }
+                )
+        return getattr(obj.objects, self.multiuploader_queryset_name).all()
+
+class MultiuploaderDetailView(MultiuploaderMixin, DetailView):
+    
+    def get_context_data(self, **kwargs):
+        return self.single_obj_context_data(self.get_object())
+
+class MultiuploaderCreateView(View, MultiuploaderMixin):
+    """
+    A mixin to handle uploads from the multi-uploader client-side code.
+    """
+    multiuploader_form_field_name = 'files'
+    multiuploader_save = True
+    success_url = None
+    
+    def post(self, request, **kwargs):
+        self.obj = self.augment_upload(self.handle_upload())
+        return HttpResponseRedirect(self.get_success_url())
+    
+    def handle_upload(self):
+        """
+        Handle the upload of a single file.
+        """
+        # Create our model that represents the file
+        obj = self.get_multiuploader_model()()
+        setattr(obj, self.get_multiuploader_field_name(), self.get_uploaded_file())
+        return self.augment_upload(obj)
+    
+    def get_uploaded_file(self):
+        if self.request.FILES == None:
+            return HttpResponseBadRequest('No files attached.')
+
+        # Get the uploaded file - note there is only a single file, even though its called xxx[]
+        return self.request.FILES[u'%s[]' % self.multiuploader_form_field_name]
+
+    def augment_upload(self, obj):
+        if self.multiuploader_save:
+            obj.save()
+        return obj
+
+    def get_success_url(self):
+        """
+        Returns the supplied success URL.
+        """
+        if self.success_url:
+            # Forcing possible reverse_lazy evaluation
+            url = force_text(self.success_url)
+        else:
+            raise ImproperlyConfigured("No URL to redirect to. Provide a success_url.")
+        return url
+
+class MultiuploaderCreateForObjectView(MultiuploaderCreateView, MultiuploaderListForObjectView):
+    """
+    Upload a file and add it to a particular relationship as defined by DetailView. 
+    """
+
+    def augment_upload(self, f):
+        obj = self.get_object()
+        getattr(obj, self.multiuploader_relationship_name).add(f)
+        return f
