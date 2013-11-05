@@ -9,7 +9,6 @@ from django.core.exceptions import ImproperlyConfigured
 from django.http.response import HttpResponse, HttpResponseRedirect,\
     HttpResponseBadRequest
 from django.views.generic.base import View
-from django.views.decorators.csrf import csrf_exempt
 
 JSON_ENCODER = getattr(settings, 'JSON_ENCODER', False)
 if JSON_ENCODER:
@@ -74,6 +73,8 @@ class MultiuploaderMixin():
     def single_obj_context_data(self, obj, wrap=True):
         field = getattr(obj, self.get_multiuploader_field_name())
         return {
+            'id': obj.pk,
+            'class': obj.__class__.__name__,
             'name': os.path.basename(field.name),
             'size': field.size,
             'url': obj.get_download_url() if hasattr(obj, 'get_download_url') else None,
