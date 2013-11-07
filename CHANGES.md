@@ -1,7 +1,8 @@
 # Changelog
 
-## 1.4.0 (2013-11-08)
+## 0.1.0 (2013-11-08)
 
+- Going back to beta... so heavily modified that its not really following the same line as the original repository.
 - Now heavily modified with class based generic views
 - Removed models in favour of user created ones
 - Refactored templates and template tag
