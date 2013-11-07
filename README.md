@@ -1,33 +1,30 @@
-===========================
-Django Multiuploader Plugin
-===========================
+# Django Multiuploader Plugin
 
 Multiple uploads for Django using jQuery File Upload (created by Sebastian Tschan https://blueimp.net/).
 
+This is a heavily modified fork of https://github.com/garmoncheg/django_multiuploader and is currently in a beta state.
+
 It uses jQuery UI and jQuery instead of Flash uploader.
 
-On Django side it uses sorl-thumbnails and PIL to generate image previews, howver 
+On Django side it uses sorl-thumbnails and PIL to generate image previews, however 
 other file types can also be uploaded.
 
 You can use it in your applications with simple inclusion tag.
 
-Requirements
-============
+## Requirements
 
     - PIL(Python Imaging Library) (for sorl)
     - sorl-thumbnail's(http://thumbnail.sorl.net/) (for thumbnails generation)
     - Django 1.5.0 +
 
-Tested
-======
+## Tested
 
-Currently Tested full functionality under Chrome, Firefox and Safari.
+Currently tested full functionality under Chrome, Firefox and Safari.
 Opera somehow fails to add multiple Photos.
 
 Will try to fix them as soon as possible.
 
-Example Usage
-=============
+## Example Usage
 
 Adding this AJAX form to your web site is as simple, as adding this 2 tags to your template:
 
@@ -40,8 +37,7 @@ For those who can not figure out this manual.) Also feel free to comment it on m
 blog or send me a e-mail with your troubles/suggestions and usage experience...
 https://github.com/garmoncheg/django_multiuploader_example_usage/
 
-Installation
-=============
+## Installation
 
 1. Install:
 
@@ -74,8 +70,7 @@ Installation
 	<script src="{{ static_url }}multiuploader/scripts/jquery.fileupload-fp.js"></script>
 	<script src="{{ static_url }}multiuploader/scripts/jquery.fileupload-ui.js"></script>
 
-Settings
-========
+## Settings
 
 You can override plugin behavior by adding those settings to your root settings.py:
 
@@ -91,8 +86,7 @@ You can override plugin behavior by adding those settings to your root settings.
 
      MULTI_IMAGES_FOLDER = 'multiuploader_images'
 
-Model Usage
-===========
+## Model Usage
 
 Plugin stores Uploaded images to a simple model. It has some those fields:
 
@@ -116,18 +110,15 @@ And then in template:
 
 I will not stop on model usage here for long. Fell free to ask me any questions appeared...
 
-Development Plans
-=================
+## Development Plans
 
  - Add a way to specify which model to use to store files.
  
-Changes
-=======
+## Changes
 
 See CHANGELOG file for additional changes upon versions.
 
-Authors
-=======
+## Authors
 
 - Iurii Garmash
-- Alex Hayes (packaging, multi-model support)
+- Alex Hayes (packaging, multi-model support, class based generic views, lots of refactoring)
