@@ -51,14 +51,14 @@ for dirpath, dirnames, filenames in os.walk(package_dir):
         package_files.extend([os.path.join(path, f) for f in filenames])
 
 setup(name="django-multiuploader",
-    version="1.4.0",
+    version="0.1.0",
     description=("Multiple uploads for Django using jQuery File Upload. Note this is a heavily modified fork of https://github.com/garmoncheg/django_multiuploader"),
     author='Alex Hayes',
     author_email='alex@alution.com',
     url='https://github.com/alexhayes/django_multiuploader',
     packages=packages,
     package_data=package_data,
-    long_description=open('README').read(),
+    long_description=open('README.md').read(),
     install_requires=[
         'Django>=1.5.0',
         'sorl-thumbnail>=11.12',
