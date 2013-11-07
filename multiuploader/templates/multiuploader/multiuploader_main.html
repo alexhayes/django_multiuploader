@@ -1,7 +1,9 @@
 {% load verbatim %}
 {# Markup is for use with bootstrap 2.3.2 #}
 
+{% if include_container %}
 <div class="fileupload-container">
+{% endif %}
 	<form{% if create_url %} action="{{ create_url }}" {% endif %}method="POST" enctype="multipart/form-data">
 		{# The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload #}
 		<div class="row-fluid fileupload-buttonbar">
@@ -46,7 +48,9 @@
 			</table>
 		</div>
 	</form>
+{% if include_container %}
 </div>
+{% endif %}
 
 {% verbatim %}
 <script id="template-upload" type="text/x-jquery-tmpl">

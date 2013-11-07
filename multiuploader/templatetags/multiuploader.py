@@ -5,9 +5,10 @@ from django.core.urlresolvers import reverse
 register = template.Library()
 
 @register.inclusion_tag('multiuploader/multiuploader_main.html')
-def multiuploader(create_view=None, list_view=None, create_url=None, list_url=None, **view_kwargs):
+def multiuploader(create_view=None, list_view=None, create_url=None, list_url=None, include_container=True, **view_kwargs):
     context = {
-        'static_url': settings.STATIC_URL
+        'static_url': settings.STATIC_URL,
+        'include_container': include_container
     }
     
     if create_url is not None:
