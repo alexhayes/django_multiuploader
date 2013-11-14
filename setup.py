@@ -58,9 +58,5 @@ setup(name="django-multiuploader",
     url='https://github.com/alexhayes/django_multiuploader',
     packages=packages,
     package_data=package_data,
-    long_description=open('README.md').read(),
-    install_requires=[
-        'Django>=1.5.0',
-        'sorl-thumbnail>=11.12',
-    ],
+    long_description=open('README.md').read()
 )
